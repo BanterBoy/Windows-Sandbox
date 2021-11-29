@@ -37,7 +37,7 @@ function Update-Wallpaper {
 }
 
 #configure wallpaper
-Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value C:\GitRepos\Windows-Sandbox\WSBshare\SuperPowerShell.jpg
+Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value 'C:\GitRepos\Windows-Sandbox\WSBshare\SuperPowerShell.jpg'
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginX -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginY -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperStyle -value 10
@@ -46,4 +46,5 @@ Update-WallPaper
 
 <# This doesn't work completely in newer versions of Windows 10 Invoke-Command {c:\windows\System32\RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters 1,True} #>
 #this is a bit harsh but it works
-Get-Process explorer | Stop-Process -Force
+# Get-Process explorer | Stop-Process -Force
+Invoke-Command { C:\Windows\System32\RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters 1,True }
