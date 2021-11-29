@@ -1,7 +1,7 @@
 #Install-VSCodeSandbox.ps1
 
 $file = Join-Path -path $env:temp -child 'VSCodeSetup-x64.exe'
-Invoke-WebRequest -Uri "https://update.code.visualstudio.com/latest/win32-x64-user/stable" -OutFile $file -DisableKeepAlive -usebasicparsing
+Invoke-WebRequest -Uri "https://update.code.visualstudio.com/latest/win32-x64-user/stable" -OutFile $file -DisableKeepAlive -UseBasicParsing
 
 $loadInf = '@
 [Setup]
@@ -18,4 +18,4 @@ $loadInf | Out-File $infPath
 Start-Process -FilePath $file -ArgumentList "/VERYSILENT /LOADINF=${infPath}" -Wait
 
 #add extensions
-Start-Process -filepath "C:\Program Files\Microsoft VS Code\bin\code.cmd" -ArgumentList "--install-extension ms-vscode.powerShell"
+Start-Process -filepath "C:\Program Files\Microsoft VS Code\bin\code.cmd" -ArgumentList "--install-extension ms-vscode.powershell"
