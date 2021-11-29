@@ -1,13 +1,10 @@
-Enable-PSRemoting -force -SkipNetworkProfileCheck
-Install-PackageProvider -Name nuget -Force -ForceBootstrap -Scope AllUsers
+Enable-PSRemoting -Force -SkipNetworkProfileCheck
+Install-PackageProvider -Name nuget -Force -ForceBootstrap
 Update-Module PackageManagement,PowerShellGet -Force
 
-Install-Module PSReleaseTools -Force
-Install-Module WTToolbox -Force
-Install-Module BurntToast -Force
-
-Install-PowerShell -Mode Quiet -EnableRemoting -EnableContextMenu -Force
-Install-WTRelease
+Start-Job { Install-Module PSReleaseTools -Force; Install-PowerShell -Mode Quiet -EnableRemoting -EnableContextMenu -EnableRunContext }
+Start-Job { Install-Module WTToolbox -Force; Install-WTRelease }
+Start-Job { Install-Module BurntToast -Force }
 Start-Job -FilePath C:\GitRepos\Windows-Sandbox\WSBshare\Set-SandboxDesktop.ps1
 
 # Wait for everything to finish
