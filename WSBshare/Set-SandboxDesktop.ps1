@@ -1,5 +1,4 @@
 # Set-SandboxDesktop.ps1
-# my Pluralsight related configuration
 
 function Update-Wallpaper {
   [cmdletbinding(SupportsShouldProcess)]
@@ -36,22 +35,6 @@ function Update-Wallpaper {
         [Wallpaper.UpdateImage]::Refresh($Path)
     }
 }
-
-#configure the taskbar and hide icons
-
-if (-not (Test-Path hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer)) {
-    [void](New-Item hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer)
-}
-
-Set-ItemProperty hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\ -Name Hideclock -Value 1
-Set-ItemProperty hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\ -Name HideSCAVolume -Value 1
-Set-ItemProperty hkcu:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\ -Name HideSCANetwork -Value 1
-
-if (-not (Test-Path hkcu:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced)) {
-    [void](New-Item hkcu:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced)
-}
-
-Set-ItemProperty hkcu:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced -Name HideIcons -Value 1
 
 #configure wallpaper
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value C:\GitRepos\Windows-Sandbox\WSBshare\SuperPowerShell.jpg
