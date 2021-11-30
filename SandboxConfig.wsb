@@ -1,20 +1,19 @@
 <Configuration>
-    <MappedFolders>
-        <MappedFolder>
-        <!-- Create a drive mapping that mirrors my Scripts folder -->
-            <HostFolder>C:\GitRepos\Windows-Sandbox\WSBshare</HostFolder>
-            <SandboxFolder>C:\GitRepos\Windows-Sandbox\WSBshare</SandboxFolder>
-            <ReadOnly>false</ReadOnly>
-        </MappedFolder>
-        <MappedFolder>
-            <HostFolder>C:\GitRepos</HostFolder>
-            <SandboxFolder>C:\GitRepos</SandboxFolder>
-            <ReadOnly>true</ReadOnly>
-        </MappedFolder>
-    </MappedFolders>
-    <ClipboardRedirection>true</ClipboardRedirection>
-    <MemoryInMB>8192</MemoryInMB>
-    <LogonCommand>
-        <Command>C:\GitRepos\Windows-Sandbox\WSBshare\sandbox-setup.cmd</Command>
-    </LogonCommand>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\Users\rob\Github\Windows-Sandbox\WSBshare</HostFolder>
+      <SandboxFolder>C:\Users\rob\Github\Windows-Sandbox\WSBshare</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+    <MappedFolder>
+      <HostFolder>C:\Users\rob\Github</HostFolder>
+      <SandboxFolder>C:\Users\rob\Github</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <ClipboardRedirection>true</ClipboardRedirection>
+  <MemoryInMB>8192</MemoryInMB>
+  <LogonCommand>
+    <Command>powershell -executionpolicy unrestricted -command "start powershell {-noexit -file C:\Users\rob\Github\Windows-Sandbox\WSBshare\sandbox-config.ps1 C:\Users\rob\Github}"</Command>
+  </LogonCommand>
 </Configuration>
