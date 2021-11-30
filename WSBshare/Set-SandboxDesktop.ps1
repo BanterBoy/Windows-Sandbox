@@ -1,5 +1,7 @@
 # Set-SandboxDesktop.ps1
 
+param([string]$repoPath)
+
 function Update-Wallpaper {
   [cmdletbinding(SupportsShouldProcess)]
     Param(
@@ -37,7 +39,7 @@ function Update-Wallpaper {
 }
 
 #configure wallpaper
-Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value 'C:\GitRepos\Windows-Sandbox\WSBshare\SuperPowerShell.jpg'
+Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value "$repoPath\Windows-Sandbox\WSBshare\SuperPowerShell.jpg"
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginX -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginY -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperStyle -value 10
