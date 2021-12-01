@@ -1,0 +1,19 @@
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\GitRepos\Windows-Sandbox\WSBshare</HostFolder>
+      <SandboxFolder>C:\GitRepos\Windows-Sandbox\WSBshare</SandboxFolder>
+      <ReadOnly>false</ReadOnly>
+    </MappedFolder>
+    <MappedFolder>
+      <HostFolder>C:\GitRepos\</HostFolder>
+      <SandboxFolder>C:\GitRepos\</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+  <ClipboardRedirection>true</ClipboardRedirection>
+  <MemoryInMB>8</MemoryInMB>
+  <LogonCommand>
+    <Command>powershell -executionpolicy unrestricted -command "start powershell {-noexit -file C:\GitRepos\Windows-Sandbox\WSBshare\sandbox-config.ps1 C:\GitRepos\}"</Command>
+  </LogonCommand>
+</Configuration>

@@ -4,10 +4,11 @@ Function Start-WindowsSandbox {
     Param(
         [Parameter(ParameterSetName = "config")]
         [ValidateScript({Test-Path $_})]
-        [string]$RepoDir = "C:\Users\rob\Github",
+        [ValidateSet("C:\GitRepos\","C:\Users\rob\Github\")]
+        [string]$RepoDir,
         
         [Parameter(ParameterSetName = "config")]
-        [ValidateScript({Test-Path $_})]
+        [ValidateScript({Test-Path $(Join-Path $RepoDir $Configuration)})]
         [string]$Configuration = "Windows-Sandbox\SandboxConfig.wsb",
         
         [Parameter()]
