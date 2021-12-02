@@ -14,20 +14,6 @@ Start-Job { Install-Module BurntToast -Force }
 Start-Job -FilePath "$repoPath\Windows-Sandbox\WSBshare\Set-SandboxDesktop.ps1" -ArgumentList $repoPath
 Start-Job -FilePath "$repoPath\Windows-Sandbox\WSBshare\Install-VSCodeSandbox.ps1" -ArgumentList $repoPath
 
-function Copy-PSProfile {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]
-        $ProfilePath = "C:\GitRepos\ProfileFunctions\Microsoft.PowerShell_profile.ps1"
-    )
-    if (Test-Path $ProfilePath) {
-        New-Item $PROFILE -Force
-        Copy-Item -Path $ProfilePath -Destination $PROFILE
-    }
-}
-Copy-PSProfile
-
 # Wait for everything to finish
 Get-Job | Wait-Job
 
