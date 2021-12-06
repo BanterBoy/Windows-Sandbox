@@ -9,7 +9,11 @@ Function Start-WindowsSandbox {
     Param(
         [Parameter(ParameterSetName = "config")]
         [ValidateSet("C:\GitRepos\","C:\Users\rob\Github\")]
-        [string]$RepoDir,
+        [string]$RepoDir = "C:\GitRepos\",
+        
+        [Parameter(ParameterSetName = "config")]
+        [ValidateSet("C:\GitRepos\ProfileFunctions\","C:\Users\rob\OneDrive\Documents\PowerShell\")]
+        [string]$PsProfileDir = "C:\GitRepos\ProfileFunctions\",
         
         [Parameter(ParameterSetName = "config")]
         [ValidateScript({Test-Path $(Join-Path $RepoDir $Configuration)})]
@@ -116,11 +120,11 @@ namespace SandboxConfiguration
 {
     public class Builder$identifier
     {
-        public static void Build(string repoDir, string configFileAndPath, ushort memory)
+        public static void Build(string repoDir, string psProfileDir, string configFileAndPath, ushort memory)
         {
             var configFile = Path.Combine(repoDir, configFileAndPath);
 
-            var sandboxCmd = Path.Combine(repoDir, $@"Windows-Sandbox\WSBshare\sandbox-config.ps1 {repoDir}");
+            var sandboxCmd = Path.Combine(repoDir, $@"Windows-Sandbox\WSBshare\sandbox-config.ps1 {repoDir} {psProfileDir}");
 
             var config = new Configuration$identifier
             {
@@ -193,7 +197,11 @@ namespace SandboxConfiguration
 }
 "@
 
-    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$RepoDir', '$Configuration', $Memory)"
+    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$RepoDir', '$PsProfileDir', '$Configuration', $Memory)"
 }
 
- Start-WindowsSandbox
+# rob env test
+# Start-WindowsSandbox -RepoDir "C:\Users\rob\Github\" -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\"
+
+# luke env test
+# Start-WindowsSandbox

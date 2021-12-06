@@ -9,7 +9,7 @@ Class SandboxSettings {
     [bool]$SevenZip = $False
     [bool]$Putty = $False
 
-    SandboxSettings([bool]$installChocolatey, [bool]$chocoGui, [bool]$windowsTerminal, [bool]$vscode, [bool]$chrome, [bool]$firefox, [bool]$edge, [bool]$notepadplusplus, [bool]$sevenZip, [bool]$putty) {
+    SandboxSettings([bool]$installChocolatey, [bool]$chocoGui, [bool]$windowsTerminal, [bool]$vscode, [bool]$chrome, [bool]$firefox, [bool]$notepadplusplus, [bool]$sevenZip, [bool]$putty) {
         $this.InstallChocolatey = $installChocolatey
         $this.ChocoGui = $chocoGui
         $this.WindowsTerminal = $windowsTerminal

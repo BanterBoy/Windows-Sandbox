@@ -1,4 +1,4 @@
-param([string]$repoPath)
+param([string]$repoPath, [string]$psProfileDir)
 
 . $(Join-Path $repoPath "Windows-Sandbox\WSBshare\SandboxSettings.ps1")
 
@@ -78,7 +78,7 @@ function Copy-PSProfile {
     param (
         [Parameter()]
         [string]
-        $ProfilePath = "C:\GitRepos\ProfileFunctions\Microsoft.PowerShell_profile.ps1"
+        $ProfilePath = $(Join-Path $psProfileDir "Microsoft.PowerShell_profile.ps1")
     )
     if (Test-Path $ProfilePath) {
         New-Item $PROFILE -Force
@@ -104,5 +104,3 @@ $params = @{
 }
 
 New-BurntToastNotification @params
-
-exit
