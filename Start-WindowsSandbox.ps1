@@ -1,41 +1,94 @@
+. "./WSBShare/SandboxSettings.ps1"
+
+<#
+    Spawn a Windows sandbox instance
+#>
 Function Start-WindowsSandbox {
     [cmdletbinding(DefaultParameterSetName = "config")]
     [alias("wsb")]
     Param(
         [Parameter(ParameterSetName = "config")]
-        [ValidateScript({Test-Path $_})]
         [string]$RepoDir = "C:\Users\rob\Github",
         
         [Parameter(ParameterSetName = "config")]
-        [ValidateScript({Test-Path $_})]
         [string]$Configuration = "Windows-Sandbox\SandboxConfig.wsb",
         
         [Parameter()]
         [ushort]$Memory = 8192,
         
+        [Parameter(ParameterSetName = "config")]
+        [string]$SettingsJson = "Windows-Sandbox\WSBShare\sandboxSettings.json",
+        
         [Parameter(ParameterSetName = "normal")]
-        [switch]$NoSetup
+        [switch]$NoSetup,
+
+        [bool]$installChocolatey = $True,
+        [bool]$chocoGui = $True,
+        [bool]$windowsTerminal = $True,
+        [bool]$vscode = $True,
+        [bool]$chrome = $True,
+        [bool]$firefox = $True,
+        [bool]$notepadplusplus = $True,
+        [bool]$7zip = $True,
+        [bool]$putty = $True
     )
 
     Write-Verbose "Starting $($myinvocation.mycommand)"
 
+    # if no configuration file is specified, spawn a default sandbox
     if ($NoSetup) {
         Write-Verbose "Launching default WindowsSandbox.exe"
+
         c:\windows\system32\WindowsSandbox.exe
-    }
-    else {
-        Write-Verbose "Creating configuration file $Configuration"
 
-        CreateSandboxConfig -RepoDir $RepoDir -Configuration $Configuration -Memory $Memory
+        Write-Verbose "Ending $($myinvocation.mycommand)"
 
-        Write-Verbose "Launching WindowsSandbox using configuration file $Configuration"
-        
-        Invoke-Item $(Join-Path $RepoDir $Configuration)
+        return
     }
+
+    # test config file here as no point validating the parameter if we're using the NoSetup switch
+    try {
+        $configFile = $(Join-Path $RepoDir $Configuration)
+
+        if (!(Test-Path $configFile)) {
+            Write-Error "Configuration file not found at $configFile"
+
+            return
+        }
+    }
+    catch {
+        Write-Error "Configuration file not found at $configFile"
+
+        return
+    }
+
+    Write-Verbose "Creating configuration file $Configuration"
+
+    CreateSandboxConfig -RepoDir $RepoDir -Configuration $Configuration -Memory $Memory
+
+    Write-Verbose "Creating settings json file $Configuration"
+
+    $settings = [SandboxSettings]::new($installChocolatey, $chocoGui, $windowsTerminal, $vscode, $chrome, $firefox, $notepadplusplus, $7zip, $putty)
+
+    $settings.WriteAsJson($(Join-Path $RepoDir $SettingsJson))
+
+    # $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $RepoDir $SettingsJson) | Out-String | ConvertFrom-Json))
+
+    Write-Verbose "Launching WindowsSandbox using configuration file $Configuration"
+    
+    Invoke-Item $(Join-Path $RepoDir $Configuration)
 
     Write-Verbose "Ending $($myinvocation.mycommand)"
-}    
+}
 
+<#
+    # Create a configuration file for the Windows Sandbox
+    #
+    # Parameters:
+    #   -RepoDir: The directory containing the repository
+    #   -Configuration: The name of the configuration file to use
+    #   -Memory: The amount of memory to allocate to the sandbox
+#>
 Function CreateSandboxConfig {
     Param(
         [Parameter()]
@@ -65,6 +118,8 @@ namespace SandboxConfiguration
         {
             var configFile = Path.Combine(repoDir, configFileAndPath);
 
+            var sandboxCmd = Path.Combine(repoDir, $@"Windows-Sandbox\WSBshare\sandbox-config.ps1 {repoDir}");
+
             var config = new Configuration$identifier
             {
                 MappedFolders = new ConfigurationMappedFolder$identifier[]
@@ -82,11 +137,11 @@ namespace SandboxConfiguration
                         ReadOnly = true
                     }
                 },
-                ClipboardRedirection = true,
+                ClipboardRedirection = "Default",
                 MemoryInMB = memory,
                 LogonCommand = new ConfigurationLogonCommand$identifier
                 {
-                    Command = $"powershell -executionpolicy unrestricted -command \"start powershell {{-noexit -file {Path.Combine(repoDir, $@"Windows-Sandbox\WSBshare\sandbox-config.ps1 {repoDir}")}}}\""
+                    Command = $"powershell -executionpolicy unrestricted -command \"start powershell {{-noexit -file {sandboxCmd}}}\""
                 } 
             };
 
@@ -110,7 +165,7 @@ namespace SandboxConfiguration
         [System.Xml.Serialization.XmlArrayItemAttribute("MappedFolder", IsNullable = false)]
         public ConfigurationMappedFolder$identifier[] MappedFolders { get; set; }
 
-        public bool ClipboardRedirection { get; set; }
+        public string ClipboardRedirection { get; set; }
         public ushort MemoryInMB { get; set; }
 
         public ConfigurationLogonCommand$identifier LogonCommand { get; set; }
@@ -139,4 +194,4 @@ namespace SandboxConfiguration
     Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$RepoDir', '$Configuration', $Memory)"
 }
 
-# Start-WindowsSandbox
+ Start-WindowsSandbox

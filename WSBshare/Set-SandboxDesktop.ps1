@@ -12,7 +12,6 @@ function Update-Wallpaper {
     )
 
     Add-Type @"
-
     using System;
     using System.Runtime.InteropServices;
     using Microsoft.Win32;
