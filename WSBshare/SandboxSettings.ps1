@@ -1,36 +1,18 @@
 Class SandboxSettings {
     [bool]$InstallChocolatey = $False
-    [bool]$ChocoGui = $False
-    [bool]$WindowsTerminal = $False
-    [bool]$Vscode = $False
-    [bool]$Chrome = $False
-    [bool]$Firefox = $False
-    [bool]$Notepadplusplus = $False
-    [bool]$SevenZip = $False
-    [bool]$Putty = $False
 
-    SandboxSettings([bool]$installChocolatey, [bool]$chocoGui, [bool]$windowsTerminal, [bool]$vscode, [bool]$chrome, [bool]$firefox, [bool]$notepadplusplus, [bool]$sevenZip, [bool]$putty) {
-        $this.InstallChocolatey = $installChocolatey
-        $this.ChocoGui = $chocoGui
-        $this.WindowsTerminal = $windowsTerminal
-        $this.Vscode = $vscode
-        $this.Chrome = $chrome
-        $this.Firefox = $firefox
-        $this.Notepadplusplus = $notepadplusplus
-        $this.SevenZip = $sevenZip
-        $this.Putty = $putty
+    [object[]]$ChocoPackages
+
+    SandboxSettings([object[]]$chocoPackages) {
+        $this.ChocoPackages = $chocoPackages
+
+        $this.InstallChocolatey = $this.ChocoPackages.count -gt 0;
     }
 
     SandboxSettings([PSCustomObject]$settings) {
-        $this.InstallChocolatey = $settings.InstallChocolatey
-        $this.ChocoGui = $settings.ChocoGui
-        $this.WindowsTerminal = $settings.WindowsTerminal
-        $this.Vscode = $settings.Vscode
-        $this.Chrome = $settings.Chrome
-        $this.Firefox = $settings.Firefox
-        $this.Notepadplusplus = $settings.Notepadplusplus
-        $this.SevenZip = $settings.SevenZip
-        $this.Putty = $settings.Putty
+        $this.ChocoPackages = $settings.ChocoPackages
+
+        $this.InstallChocolatey = $this.ChocoPackages.count -gt 0;
     }
 
     [void]WriteAsJson([string]$path) {

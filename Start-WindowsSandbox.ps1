@@ -1,7 +1,61 @@
 . "./WSBShare/SandboxSettings.ps1"
 
 <#
+    .SYNOPSIS
     Spawn a Windows sandbox instance
+
+    .PARAMETER RepoDir
+    The directory where the repository is located, i.e. where this was checked out.
+
+    .PARAMETER PsProfileDir
+    The directory where your PowerShell profile is located.
+
+    .PARAMETER Configuration
+    The location of the sandbox configuration file. This is created by the function and should probably be left alone.
+
+    .PARAMETER Memory
+    The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB).
+
+    .PARAMETER SettingsJson
+    The location the generated settings file will be written to. This should be the shared folder for the sandbox, i.e. "./WSBShare/SandboxSettings.json", best not to change.
+
+    .PARAMETER NoSetup
+    If set to true, the sandbox will not be configured.
+
+    .PARAMETER ChocoGui
+    If supplied, chocolatey will be used to install choco GUI.
+
+    .PARAMETER WindowsTerminal
+    If supplied, chocolatey will be used to install windows terminal.
+
+    .PARAMETER VsCode
+    If supplied, chocolatey will be used to install VS Code.
+
+    .PARAMETER Chrome
+    If supplied, chocolatey will be used to install chrome.
+
+    .PARAMETER Firefox
+    If supplied, chocolatey will be used to install firefox.
+
+    .PARAMETER NotepadPlusPlus
+    If supplied, chocolatey will be used to install Notepad++.
+
+    .PARAMETER SevenZip
+    If supplied, chocolatey will be used to install 7zip.
+
+    .PARAMETER Git
+    If supplied, chocolatey will be used to install git.
+
+    .PARAMETER Putty
+    If supplied, chocolatey will be used to install putty.
+
+    .PARAMETER ChocoPackages
+    If supplied, expects an array of PS Custom Objects with command (the chocolatey install command) and params (if required) properties, e.g. @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+
+    .EXAMPLE 
+    Create a sandbox and install windows terminal, VS code, firefox, 7zip, git and nodejs
+    Start-WindowsSandbox -RepoDir "C:\Github\" -PsProfileDir "C:\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+
 #>
 Function Start-WindowsSandbox {
     [cmdletbinding(DefaultParameterSetName = "config")]
@@ -28,15 +82,35 @@ Function Start-WindowsSandbox {
         [Parameter(ParameterSetName = "normal")]
         [switch]$NoSetup,
 
-        [bool]$installChocolatey = $True,
-        [bool]$chocoGui = $True,
-        [bool]$windowsTerminal = $True,
-        [bool]$vscode = $True,
-        [bool]$chrome = $True,
-        [bool]$firefox = $True,
-        [bool]$notepadplusplus = $True,
-        [bool]$7zip = $True,
-        [bool]$putty = $True
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install the chocolatey GUI on the sandbox")]
+        [switch]$ChocoGui,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install windows terminal on the sandbox")]
+        [switch]$windowsTerminal,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install VS code on the sandbox")]
+        [switch]$VsCode,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install Chrome on the sandbox")]
+        [switch]$Chrome,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install Firefox on the sandbox")]
+        [switch]$Firefox,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install Notepad++ on the sandbox")]
+        [switch]$NotepadPlusPlus,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install 7zip on the sandbox")]
+        [switch]$SevenZip,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install git on the sandbox")]
+        [switch]$Git,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install Putty on the sandbox")]
+        [switch]$Putty,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Array of chocolatey package names to be installed. For predefined packages use switches, e.g. -vscode -chrome -firefox")]
+		[pscustomobject[]]$ChocoPackages
     )
 
     Write-Verbose "Starting $($myinvocation.mycommand)"
@@ -74,11 +148,36 @@ Function Start-WindowsSandbox {
 
     Write-Verbose "Creating settings json file $Configuration"
 
-    $settings = [SandboxSettings]::new($installChocolatey, $chocoGui, $windowsTerminal, $vscode, $chrome, $firefox, $notepadplusplus, $7zip, $putty)
+    if ($null -eq $ChocoPackages) {
+        $ChocoPackages = [pscustomobject]@()
+    }
+
+    # predefined choco packages that can be included using parameter switches
+    $packagesConfig = @(
+        [pscustomobject]@{ exists = $ChocoGui.IsPresent; command = 'chocolateygui'; params = ''; },
+        [pscustomobject]@{ exists = $windowsTerminal.IsPresent; command = 'microsoft-windows-terminal'; params = ''; },
+        [pscustomobject]@{ exists = $VsCode.IsPresent; command = 'vscode'; params = ''; },
+        [pscustomobject]@{ exists = $Chrome.IsPresent; command = 'googlechrome'; params = ''; },
+        [pscustomobject]@{ exists = $Firefox.IsPresent; command = 'firefox'; params = ''; },
+        [pscustomobject]@{ exists = $NotepadPlusPlus.IsPresent; command = 'notepadplusplus.install'; params = ''; },
+        [pscustomobject]@{ exists = $SevenZip.IsPresent; command = '7zip.install'; params = ''; },
+        [pscustomobject]@{ exists = $Git.IsPresent; command = 'git'; params = "'/WindowsTerminal /WindowsTerminalProfile /Editor:VisualStudioCode'"; },
+        [pscustomobject]@{ exists = $Putty.IsPresent; command = 'putty'; params = ''; }
+    )
+
+    foreach ($package in $packagesConfig) {
+        if ($package.exists) {
+            $ChocoPackages = $ChocoPackages + @([pscustomobject]@{ command = $package.command; params = $package.params; })
+        }
+    }
+
+    $settings = [SandboxSettings]::new($ChocoPackages)
+
+    # $settings = [SandboxSettings]::new($ChocoGui.IsPresent(), $windowsTerminal.IsPresent(), $VsCode.IsPresent(), $Chrome.IsPresent(), $Firefox.IsPresent(), $NotepadPlusPlus.IsPresent(), $7zip.IsPresent(), $Putty.IsPresent())
 
     $settings.WriteAsJson($(Join-Path $RepoDir $SettingsJson))
 
-    # $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $RepoDir $SettingsJson) | Out-String | ConvertFrom-Json))
+    $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $RepoDir $SettingsJson) | Out-String | ConvertFrom-Json))
 
     Write-Verbose "Launching WindowsSandbox using configuration file $Configuration"
     
@@ -201,7 +300,7 @@ namespace SandboxConfiguration
 }
 
 # rob env test
-# Start-WindowsSandbox -RepoDir "C:\Users\rob\Github\" -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\"
+# Start-WindowsSandbox -RepoDir "C:\Users\rob\Github\" -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
 
 # luke env test
 # Start-WindowsSandbox

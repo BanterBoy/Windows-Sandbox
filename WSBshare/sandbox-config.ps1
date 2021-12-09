@@ -2,58 +2,20 @@ param([string]$repoPath, [string]$psProfileDir)
 
 . $(Join-Path $repoPath "Windows-Sandbox\WSBshare\SandboxSettings.ps1")
 
+<#
+.SYNOPSIS
+ If any packages have been passed into the settings file, then this function will install them using chocolatey.
+#>
 function Install-Chocolatey($settings) {
     Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-    # chocolatey GUI
-    if ($settings.ChocoGui) {
-        choco install chocolateygui -y
-    }
-
-    # windows terminal
-    if ($settings.WindowsTerminal) {
-        choco install microsoft-windows-terminal -y
-    }
-
-    # vs code
-    if ($settings.Vscode) {
-        choco install vscode -y
-    }
-
-    # chrome
-    if ($settings.Chrome) {
-        choco install googlechrome -y
-    }
-
-    # firefox
-    if ($settings.Firefox) {
-        choco install firefox -y
-    }
-
-    # edge
-    if ($settings.Edge) {
-        choco install microsoft-edge -y
-    }
-
-    # notepad++
-    if ($settings.Notepadplusplus) {
-        choco install notepadplusplus.install -y
-    }
-
-    # 7zip
-    if ($settings.SevenZip) {
-        choco install 7zip.install -y
-    }
-
-    # git (https://community.chocolatey.org/packages/git.install)
-    if ($settings.Git) {
-        choco install git.install -y --params="'/WindowsTerminal /WindowsTerminalProfile /Editor:VisualStudioCode'"
-    }
-
-    # putty
-    if ($settings.Putty) {
-        choco install putty.install -y
+    foreach ($package in $settings.ChocoPackages) {
+        if ([String]::IsNullOrWhiteSpace($package.params)) {
+            choco install $package.command -y
+        } else {
+            choco install $package.command -y --params=$($package.params)
+        }
     }
 }
 
@@ -100,7 +62,7 @@ if ($settings.InstallChocolatey) {
 $params = @{
     Text    = "Windows Sandbox configuration is complete."
     Header  = $(New-BTHeader -Id 1 -Title "Sandbox Complete")
-    Applogo = "$repoPath\Windows-Sandbox\WSBshare\ToastIcon.jpg"
+    Applogo = $(Join-Path $repoPath "Windows-Sandbox\WSBshare\ToastIcon.jpg")
 }
 
 New-BurntToastNotification @params
