@@ -1,1 +1,0 @@
-{"InstallChocolatey":true,"ChocoPackages":[{"command":"microsoft-windows-terminal","params":""},{"command":"git","params":"'/WindowsTerminal /WindowsTerminalProfile /Editor:VisualStudioCode'"}]}
