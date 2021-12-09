@@ -108,7 +108,7 @@ Function Start-WindowsSandbox {
         [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install Putty on the sandbox")]
         [switch]$Putty,
 
-        [Parameter(Mandatory = $false, HelpMessage = "Array of chocolatey package names to be installed. For predefined packages use switches, e.g. -vscode -chrome -firefox")]
+        [Parameter(Mandatory = $false, HelpMessage = "Array of chocolatey package names to be installed. For predefined packages use switches, e.g. -VsCode -Chrome -Firefox")]
 		[pscustomobject[]]$ChocoPackages
     )
 
