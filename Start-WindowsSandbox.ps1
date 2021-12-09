@@ -70,7 +70,6 @@ Function Start-WindowsSandbox {
         [string]$PsProfileDir = "C:\GitRepos\ProfileFunctions\",
         
         [Parameter(ParameterSetName = "config")]
-        [ValidateScript({Test-Path $(Join-Path $RepoDir $Configuration)})]
         [string]$Configuration = "Windows-Sandbox\SandboxConfig.wsb",
         
         [Parameter()]
@@ -122,22 +121,6 @@ Function Start-WindowsSandbox {
         c:\windows\system32\WindowsSandbox.exe
 
         Write-Verbose "Ending $($myinvocation.mycommand)"
-
-        return
-    }
-
-    # test config file here as no point validating the parameter if we're using the NoSetup switch
-    try {
-        $configFile = $(Join-Path $RepoDir $Configuration)
-
-        if (!(Test-Path $configFile)) {
-            Write-Error "Configuration file not found at $configFile"
-
-            return
-        }
-    }
-    catch {
-        Write-Error "Configuration file not found at $configFile"
 
         return
     }
