@@ -34,6 +34,7 @@ Install-Module PackageManagement, PowerShellGet -Force
 Start-Job { Install-Module PSReleaseTools -Force; Install-PowerShell -Mode Quiet -EnableRemoting -EnableContextMenu -EnableRunContext }
 Start-Job { Install-Module WTToolbox -Force; Install-WTRelease }
 Start-Job { Install-Module BurntToast -Force }
+Start-Job -FilePath $(Join-Path $repoPath "Windows-Sandbox\WSBshare\Set-SandboxDesktop.ps1") -ArgumentList $repoPath
 
 function Copy-PSProfile {
     [CmdletBinding()]
