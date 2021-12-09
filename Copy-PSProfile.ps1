@@ -1,19 +1,4 @@
-<#
-.SYNOPSIS
- think this can be deleted? assuming it was here for testing before being put in teh sandbox ps1?
-
-.DESCRIPTION
-Long description
-
-.PARAMETER ProfilePath
-Parameter description
-
-.EXAMPLE
-An example
-
-.NOTES
-General notes
-#>
+<# think this can be deleted? assuming it was here for testing before being put in the sandbox ps1? #>
 function Copy-PSProfile {
     [CmdletBinding()]
     param (
