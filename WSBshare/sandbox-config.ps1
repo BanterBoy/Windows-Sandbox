@@ -40,15 +40,18 @@ function Copy-PSProfile {
     [CmdletBinding()]
     param (
         [Parameter()]
-        [string]
-        $ProfilePath = $(Join-Path $psProfileDir "Microsoft.PowerShell_profile.ps1")
+        [string]$ProfilePath
     )
-    if (Test-Path $ProfilePath) {
+
+    $profileFile = $(Join-Path $ProfilePath "Microsoft.PowerShell_profile.ps1")
+
+    if (Test-Path $profileFile) {
         New-Item $PROFILE -Force
-        Copy-Item -Path $ProfilePath -Destination $PROFILE
+        Copy-Item -Path $profileFile -Destination $PROFILE
     }
 }
-Copy-PSProfile
+
+Copy-PSProfile -ProfilePath $psProfileDir
 
 # Wait for everything to finish
 Get-Job | Wait-Job
