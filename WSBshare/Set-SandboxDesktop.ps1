@@ -12,7 +12,6 @@ function Update-Wallpaper {
     )
 
     Add-Type @"
-
     using System;
     using System.Runtime.InteropServices;
     using Microsoft.Win32;
@@ -39,7 +38,7 @@ function Update-Wallpaper {
 }
 
 #configure wallpaper
-Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value "$repoPath\Windows-Sandbox\WSBshare\SuperPowerShell.jpg"
+Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name Wallpaper -Value $(Join-Path $repoPath "Windows-Sandbox\WSBshare\SuperPowerShell.jpg")
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginX -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperOriginY -value 0
 Set-ItemProperty 'hkcu:\Control Panel\Desktop\' -Name WallpaperStyle -value 10
