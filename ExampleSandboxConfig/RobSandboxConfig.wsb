@@ -11,7 +11,7 @@
       <ReadOnly>true</ReadOnly>
     </MappedFolder>
   </MappedFolders>
-  <ClipboardRedirection>true</ClipboardRedirection>
+  <ClipboardRedirection>Default</ClipboardRedirection>
   <MemoryInMB>8192</MemoryInMB>
   <LogonCommand>
     <Command>powershell -executionpolicy unrestricted -command "start powershell {-noexit -file C:\Users\rob\Github\Windows-Sandbox\WSBshare\sandbox-config.ps1 C:\Users\rob\Github}"</Command>

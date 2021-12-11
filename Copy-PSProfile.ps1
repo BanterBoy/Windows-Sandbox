@@ -1,3 +1,4 @@
+<# think this can be deleted? assuming it was here for testing before being put in the sandbox ps1? #>
 function Copy-PSProfile {
     [CmdletBinding()]
     param (
