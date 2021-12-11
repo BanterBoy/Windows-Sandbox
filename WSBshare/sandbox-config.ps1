@@ -1,6 +1,6 @@
-param([string]$repoPath, [string]$psProfileDir)
+param([string]$psProfileDir)
 
-. $(Join-Path $repoPath "Windows-Sandbox\WSBshare\SandboxSettings.ps1")
+. $(Join-Path $PSScriptRoot "SandboxSettings.ps1")
 
 <#
 .SYNOPSIS
@@ -34,7 +34,7 @@ Install-Module PackageManagement, PowerShellGet -Force
 Start-Job { Install-Module PSReleaseTools -Force; Install-PowerShell -Mode Quiet -EnableRemoting -EnableContextMenu -EnableRunContext }
 Start-Job { Install-Module WTToolbox -Force; Install-WTRelease }
 Start-Job { Install-Module BurntToast -Force }
-Start-Job -FilePath $(Join-Path $repoPath "Windows-Sandbox\WSBshare\Set-SandboxDesktop.ps1") -ArgumentList $repoPath
+Start-Job -FilePath $(Join-Path $PSScriptRoot "Set-SandboxDesktop.ps1")
 
 function Copy-PSProfile {
     [CmdletBinding()]
@@ -56,17 +56,21 @@ Copy-PSProfile -ProfilePath $psProfileDir
 # Wait for everything to finish
 Get-Job | Wait-Job
 
-$settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $repoPath "Windows-Sandbox\WSBShare\sandboxSettings.json") | Out-String | ConvertFrom-Json))
+$settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $PSScriptRoot "sandboxSettings.json") | Out-String | ConvertFrom-Json))
 
 if ($settings.InstallChocolatey) {
     Install-Chocolatey($settings)
+}
+
+if (-Not [String]::IsNullOrWhiteSpace($settings.LaunchScript)) {
+    . (Join-Path $PSScriptRoot $settings.LaunchScript)
 }
 
 # Sandbox Configuration Complete Toast Notification
 $params = @{
     Text    = "Windows Sandbox configuration is complete."
     Header  = $(New-BTHeader -Id 1 -Title "Sandbox Complete")
-    Applogo = $(Join-Path $repoPath "Windows-Sandbox\WSBshare\ToastIcon.jpg")
+    Applogo = $(Join-Path $PSScriptRoot "ToastIcon.jpg")
 }
 
 New-BurntToastNotification @params

@@ -1,26 +1,21 @@
-. "./WSBShare/SandboxSettings.ps1"
+
+. $(Join-Path $PSScriptRoot "\WSBShare\SandboxSettings.ps1")
 
 <#
     .SYNOPSIS
     Spawn a Windows sandbox instance
 
-    .PARAMETER RepoDir
-    The directory where the repository is located, i.e. where this was checked out.
-
     .PARAMETER PsProfileDir
     The directory where your PowerShell profile is located.
-
-    .PARAMETER Configuration
-    The location of the sandbox configuration file. This is created by the function and should probably be left alone.
 
     .PARAMETER Memory
     The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB).
 
-    .PARAMETER SettingsJson
-    The location the generated settings file will be written to. This should be the shared folder for the sandbox, i.e. "./WSBShare/SandboxSettings.json", best not to change.
-
     .PARAMETER NoSetup
     If set to true, the sandbox will not be configured.
+
+    .PARAMETER AllPredefinedPackages
+    If supplied, chocolatey will be used to install all predefined packages.
 
     .PARAMETER ChocoGui
     If supplied, chocolatey will be used to install choco GUI.
@@ -52,9 +47,12 @@
     .PARAMETER ChocoPackages
     If supplied, expects an array of PS Custom Objects with command (the chocolatey install command) and params (if required) properties, e.g. @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
 
+    .PARAMETER LaunchScript
+    Supply the full path to a ps1 script that will be run once the sandbox has been created
+
     .EXAMPLE 
     Create a sandbox and install windows terminal, VS code, firefox, 7zip, git and nodejs
-    Start-WindowsSandbox -RepoDir "C:\Github\" -PsProfileDir "C:\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+    Start-WindowsSandbox -PsProfileDir "C:\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
 
 #>
 Function Start-WindowsSandbox {
@@ -62,24 +60,17 @@ Function Start-WindowsSandbox {
     [alias("wsb")]
     Param(
         [Parameter(ParameterSetName = "config")]
-        [ValidateSet("C:\GitRepos\","C:\Users\rob\Github\")]
-        [string]$RepoDir = "C:\GitRepos\",
-        
-        [Parameter(ParameterSetName = "config")]
         [ValidateSet("C:\GitRepos\ProfileFunctions\","C:\Users\rob\OneDrive\Documents\PowerShell\")]
         [string]$PsProfileDir = "C:\GitRepos\ProfileFunctions\",
-        
-        [Parameter(ParameterSetName = "config")]
-        [string]$Configuration = "Windows-Sandbox\SandboxConfig.wsb",
         
         [Parameter()]
         [ushort]$Memory = 8192,
         
-        [Parameter(ParameterSetName = "config")]
-        [string]$SettingsJson = "Windows-Sandbox\WSBShare\sandboxSettings.json",
-        
         [Parameter(ParameterSetName = "normal")]
         [switch]$NoSetup,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install the chocolatey GUI on the sandbox")]
+        [switch]$AllPredefinedPackages,
 
         [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install the chocolatey GUI on the sandbox")]
         [switch]$ChocoGui,
@@ -109,7 +100,11 @@ Function Start-WindowsSandbox {
         [switch]$Putty,
 
         [Parameter(Mandatory = $false, HelpMessage = "Array of chocolatey package names to be installed. For predefined packages use switches, e.g. -VsCode -Chrome -Firefox")]
-		[pscustomobject[]]$ChocoPackages
+		[pscustomobject[]]$ChocoPackages,
+
+        [Parameter(Mandatory = $false, HelpMessage = "File path of a ps1 script that will be run on the sandbox after it is created")]
+        [ValidateScript({Test-Path $_})]
+        [string]$LaunchScript
     )
 
     Write-Verbose "Starting $($myinvocation.mycommand)"
@@ -125,11 +120,13 @@ Function Start-WindowsSandbox {
         return
     }
 
-    Write-Verbose "Creating configuration file $Configuration"
+    $wsbShare = $(Join-Path $PSScriptRoot "WSBShare")
 
-    CreateSandboxConfig -RepoDir $RepoDir -Configuration $Configuration -Memory $Memory
+    Write-Verbose "Creating configuration file SandboxConfig.wsb"
 
-    Write-Verbose "Creating settings json file $Configuration"
+    CreateSandboxConfig -Memory $Memory
+
+    Write-Verbose "Creating settings json file SandboxConfig.wsb"
 
     if ($null -eq $ChocoPackages) {
         $ChocoPackages = [pscustomobject]@()
@@ -149,22 +146,29 @@ Function Start-WindowsSandbox {
     )
 
     foreach ($package in $packagesConfig) {
-        if ($package.exists) {
+        if ($package.exists -or $AllPredefinedPackages.IsPresent) {
             $ChocoPackages = $ChocoPackages + @([pscustomobject]@{ command = $package.command; params = $package.params; })
         }
     }
 
-    $settings = [SandboxSettings]::new($ChocoPackages)
+    [string]$launchScriptFileName = $null
 
-    # $settings = [SandboxSettings]::new($ChocoGui.IsPresent(), $windowsTerminal.IsPresent(), $VsCode.IsPresent(), $Chrome.IsPresent(), $Firefox.IsPresent(), $NotepadPlusPlus.IsPresent(), $7zip.IsPresent(), $Putty.IsPresent())
+    if (-Not [String]::IsNullOrWhiteSpace($LaunchScript)) {
+        $launchScriptFileName = [System.IO.Path]::GetFileName($LaunchScript)
 
-    $settings.WriteAsJson($(Join-Path $RepoDir $SettingsJson))
+        Copy-Item -Path $LaunchScript -Destination $(Join-Path $wsbShare $launchScriptFileName) -Force
+    }
 
-    $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $RepoDir $SettingsJson) | Out-String | ConvertFrom-Json))
+    $settings = [SandboxSettings]::new($ChocoPackages, $launchScriptFileName)
 
-    Write-Verbose "Launching WindowsSandbox using configuration file $Configuration"
+    $settings.WriteAsJson($(Join-Path $wsbShare "sandboxSettings.json"))
+
+    # uncomment to test desrialising the settings.json file back the to the SandboxSettings class
+    # $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $wsbShare "sandboxSettings.json") | Out-String | ConvertFrom-Json))
+
+    Write-Verbose "Launching WindowsSandbox using configuration file SandboxConfig.wsb"
     
-    Invoke-Item $(Join-Path $RepoDir $Configuration)
+    Invoke-Item $(Join-Path $PSScriptRoot "SandboxConfig.wsb")
 
     Write-Verbose "Ending $($myinvocation.mycommand)"
 }
@@ -173,18 +177,10 @@ Function Start-WindowsSandbox {
     # Create a configuration file for the Windows Sandbox
     #
     # Parameters:
-    #   -RepoDir: The directory containing the repository
-    #   -Configuration: The name of the configuration file to use
     #   -Memory: The amount of memory to allocate to the sandbox
 #>
 Function CreateSandboxConfig {
     Param(
-        [Parameter()]
-        [string]$RepoDir,
-        
-        [Parameter()]
-        [string]$Configuration,
-        
         [Parameter()]
         [ushort]$Memory
     )
@@ -202,26 +198,26 @@ namespace SandboxConfiguration
 {
     public class Builder$identifier
     {
-        public static void Build(string repoDir, string psProfileDir, string configFileAndPath, ushort memory)
+        public static void Build(string scriptDir, string psProfileDir, ushort memory)
         {
-            var configFile = Path.Combine(repoDir, configFileAndPath);
+            var configFile = Path.Combine(scriptDir, "SandboxConfig.wsb");
 
-            var sandboxCmd = Path.Combine(repoDir, $@"Windows-Sandbox\WSBshare\sandbox-config.ps1 {repoDir} {psProfileDir}");
-
+            var sandboxCmd = $"{Path.Combine(scriptDir, $@"WSBshare\sandbox-config.ps1")} {psProfileDir}";
+            
             var config = new Configuration$identifier
             {
                 MappedFolders = new ConfigurationMappedFolder$identifier[]
                 {
                     new ConfigurationMappedFolder$identifier
                     {
-                        HostFolder = Path.Combine(repoDir, @"Windows-Sandbox\WSBshare"),
-                        SandboxFolder = Path.Combine(repoDir, @"Windows-Sandbox\WSBshare"),
+                        HostFolder = Path.Combine(scriptDir, @"WSBshare"),
+                        SandboxFolder = Path.Combine(scriptDir, @"WSBshare"),
                         ReadOnly = false
                     },
                     new ConfigurationMappedFolder$identifier
                     {
-                        HostFolder = repoDir,
-                        SandboxFolder = repoDir,
+                        HostFolder = scriptDir,
+                        SandboxFolder = scriptDir,
                         ReadOnly = true
                     }
                 },
@@ -279,11 +275,11 @@ namespace SandboxConfiguration
 }
 "@
 
-    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$RepoDir', '$PsProfileDir', '$Configuration', $Memory)"
+    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$PSScriptRoot', '$PsProfileDir', $Memory)"
 }
 
 # rob env test
-# Start-WindowsSandbox -RepoDir "C:\Users\rob\Github\" -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+# Start-WindowsSandbox -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
 
 # luke env test
 # Start-WindowsSandbox
