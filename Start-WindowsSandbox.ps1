@@ -5,8 +5,8 @@
     .SYNOPSIS
     Spawn a Windows sandbox instance
 
-    .PARAMETER PsProfileDir
-    The directory where your PowerShell profile is located.
+    .PARAMETER CopyPsProfile
+    If supplied your Powershell profile will be copied to the sandbox
 
     .PARAMETER Memory
     The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB).
@@ -51,8 +51,8 @@
     Supply the full path to a ps1 script that will be run once the sandbox has been created
 
     .EXAMPLE 
-    Create a sandbox and install windows terminal, VS code, firefox, 7zip, git and nodejs
-    Start-WindowsSandbox -PsProfileDir "C:\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+    Create a sandbox, copy your PS profile and install windows terminal, VS code, firefox, 7zip, git and nodejs
+    Start-WindowsSandbox -CopyPsProfile -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
 
 #>
 Function Start-WindowsSandbox {
@@ -60,8 +60,7 @@ Function Start-WindowsSandbox {
     [alias("wsb")]
     Param(
         [Parameter(ParameterSetName = "config")]
-        [ValidateSet("C:\GitRepos\ProfileFunctions\","C:\Users\rob\OneDrive\Documents\PowerShell\")]
-        [string]$PsProfileDir = "C:\GitRepos\ProfileFunctions\",
+        [switch]$CopyPsProfile,
         
         [Parameter()]
         [ushort]$Memory = 8192,
@@ -109,6 +108,12 @@ Function Start-WindowsSandbox {
 
     Write-Verbose "Starting $($myinvocation.mycommand)"
 
+    $wsbShare = $(Join-Path $PSScriptRoot "WSBShare")
+
+    if ($CopyPsProfile.IsPresent) {
+        Copy-Item -Path $PROFILE -Destination $wsbShare -Force
+    }
+
     # if no configuration file is specified, spawn a default sandbox
     if ($NoSetup) {
         Write-Verbose "Launching default WindowsSandbox.exe"
@@ -119,8 +124,6 @@ Function Start-WindowsSandbox {
 
         return
     }
-
-    $wsbShare = $(Join-Path $PSScriptRoot "WSBShare")
 
     Write-Verbose "Creating configuration file SandboxConfig.wsb"
 
@@ -198,11 +201,11 @@ namespace SandboxConfiguration
 {
     public class Builder$identifier
     {
-        public static void Build(string scriptDir, string psProfileDir, ushort memory)
+        public static void Build(string scriptDir, ushort memory)
         {
             var configFile = Path.Combine(scriptDir, "SandboxConfig.wsb");
 
-            var sandboxCmd = $"{Path.Combine(scriptDir, $@"WSBshare\sandbox-config.ps1")} {psProfileDir}";
+            var sandboxCmd = $"{Path.Combine(scriptDir, $@"WSBshare\sandbox-config.ps1")}";
             
             var config = new Configuration$identifier
             {
@@ -275,11 +278,11 @@ namespace SandboxConfiguration
 }
 "@
 
-    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$PSScriptRoot', '$PsProfileDir', $Memory)"
+    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$PSScriptRoot', $Memory)"
 }
 
 # rob env test
-# Start-WindowsSandbox -PsProfileDir "C:\Users\rob\OneDrive\Documents\PowerShell\" -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
+# Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
 
 # luke env test
 # Start-WindowsSandbox
