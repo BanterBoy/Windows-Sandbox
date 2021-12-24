@@ -12,7 +12,7 @@
     The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB).
 
     .PARAMETER NoSetup
-    If set to true, the sandbox will not be configured.
+    If supplied, the sandbox will not be configured.
 
     .PARAMETER AllPredefinedPackages
     If supplied, chocolatey will be used to install all predefined packages.
@@ -59,13 +59,13 @@ Function Start-WindowsSandbox {
     [cmdletbinding(DefaultParameterSetName = "config")]
     [alias("wsb")]
     Param(
-        [Parameter(ParameterSetName = "config")]
+        [Parameter(Mandatory = $false, HelpMessage = "Copy your Powershell profile to the sandbox")]
         [switch]$CopyPsProfile,
         
-        [Parameter()]
+        [Parameter(HelpMessage = "Amount of memory (in MB) to allocate to the sandbox. Defaults to 8192 (8GB)")]
         [ushort]$Memory = 8192,
         
-        [Parameter(ParameterSetName = "normal")]
+        [Parameter(HelpMessage = "Launch a sandbox without any configuration")]
         [switch]$NoSetup,
 
         [Parameter(Mandatory = $false, HelpMessage = "Install chocolatey and all predefined packages (i.e. no other package switches required)")]
