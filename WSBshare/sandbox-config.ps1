@@ -1,5 +1,3 @@
-param([string]$psProfileDir)
-
 . $(Join-Path $PSScriptRoot "SandboxSettings.ps1")
 
 <#
@@ -37,21 +35,22 @@ Start-Job { Install-Module BurntToast -Force }
 Start-Job -FilePath $(Join-Path $PSScriptRoot "Set-SandboxDesktop.ps1")
 
 function Copy-PSProfile {
-    [CmdletBinding()]
-    param (
-        [Parameter()]
-        [string]$ProfilePath
-    )
+    $sharedProfile = $(Join-Path $PSScriptRoot "Microsoft.PowerShell_profile.ps1")
 
-    $profileFile = $(Join-Path $ProfilePath "Microsoft.PowerShell_profile.ps1")
-
-    if (Test-Path $profileFile) {
-        New-Item $PROFILE -Force
-        Copy-Item -Path $profileFile -Destination $PROFILE
+    if (-Not $(Test-Path($sharedProfile))) {
+        return;
     }
+
+    New-Item $PROFILE -Force
+    Copy-Item -Path $sharedProfile -Destination $PROFILE
+
+    $ps7Profile = $PROFILE -replace "Windows",""
+
+    New-Item $ps7Profile -Force
+    Copy-Item -Path $sharedProfile -Destination $ps7Profile
 }
 
-Copy-PSProfile -ProfilePath $psProfileDir
+Copy-PSProfile
 
 # Wait for everything to finish
 Get-Job | Wait-Job
