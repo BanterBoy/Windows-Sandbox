@@ -68,7 +68,7 @@ Function Start-WindowsSandbox {
         [Parameter(ParameterSetName = "normal")]
         [switch]$NoSetup,
 
-        [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install the chocolatey GUI on the sandbox")]
+        [Parameter(Mandatory = $false, HelpMessage = "Install chocolatey and all predefined packages (i.e. no other package switches required)")]
         [switch]$AllPredefinedPackages,
 
         [Parameter(Mandatory = $false, HelpMessage = "Use chocolatey to install the chocolatey GUI on the sandbox")]
