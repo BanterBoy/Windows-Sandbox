@@ -343,7 +343,7 @@ namespace SandboxConfiguration
 
 # rob env test
 # Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
-Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\rob\Github\Windows-Sandbox') -ReadWriteMappings @('C:\Users\rob\Github')
+# Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\rob\Github\Windows-Sandbox') -ReadWriteMappings @('C:\Users\rob\Github')
 
 # luke env test
 # Start-WindowsSandbox
