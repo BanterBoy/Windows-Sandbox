@@ -48,11 +48,25 @@
     If supplied, expects an array of PS Custom Objects with command (the chocolatey install command) and params (if required) properties, e.g. @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
 
     .PARAMETER LaunchScript
-    Supply the full path to a ps1 script that will be run once the sandbox has been created
+    Supply the full path to a ps1 script that will be run once the sandbox has been created.
+
+    .PARAMETER ReadOnlyMappings
+    Array of directories that will be made available to the sandbox via mappings with read only permissions.
+
+    .PARAMETER ReadWriteMappings
+    Array of directories that will be made available to the sandbox via mappings with read/write permissions.
 
     .EXAMPLE 
-    Create a sandbox, copy your PS profile and install windows terminal, VS code, firefox, 7zip, git and nodejs
+    Create a sandbox, copy your PS profile and install windows terminal, VS code, firefox, 7zip, git and nodejs.
     Start-WindowsSandbox -CopyPsProfile -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; })
+
+    .EXAMPLE 
+    Create a sandbox, install windows terminal, VS code, firefox, 7zip and git, and run a custom PS1 script after the sandbox has been created.
+    Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -LaunchScript "C:\Users\Arthur\MakeTea.ps1"
+
+    .EXAMPLE 
+    Create a sandbox, install windows terminal, VS code, firefox, 7zip and git, and set read only and read/write directory mappings.
+    Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ReadOnlyMappings @('C:\Users\Zaphod\HeartOfGold') -ReadWriteMappings @('C:\Users\Ford\Betelgeuse')
 
 #>
 Function Start-WindowsSandbox {
@@ -103,7 +117,13 @@ Function Start-WindowsSandbox {
 
         [Parameter(Mandatory = $false, HelpMessage = "File path of a ps1 script that will be run on the sandbox after it is created")]
         [ValidateScript({Test-Path $_})]
-        [string]$LaunchScript
+        [string]$LaunchScript,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Array of directories that will be made available to the sandbox via mappings with read only permissions")]
+		[string[]]$ReadOnlyMappings,
+
+        [Parameter(Mandatory = $false, HelpMessage = "Array of directories that will be made available to the sandbox via mappings with read/write permissions")]
+		[string[]]$ReadWriteMappings
     )
 
     Write-Verbose "Starting $($myinvocation.mycommand)"
@@ -190,10 +210,33 @@ Function CreateSandboxConfig {
 
     $identifier = [System.Guid]::NewGuid().ToString().Replace("-", "")
 
+    <#
+        # Generate a List<string> variable int he C# script to declare any mappings provided in the parameters
+        #
+        # Parameters:
+        #   -varName: Name of the variable to create
+        #   -mappings: The mappings to create the variable with
+    #>
+    Function GenerateCSharpMappingVariable([string] $varName, [string[]] $mappings) {
+        $scriptVar = "var $varName = new List<string> {"
+    
+        if ($null -ne $mappings) {
+            foreach ($mapping in $mappings) {
+                $scriptVar += "@""$mapping"","
+            }
+        }
+        
+        $scriptVar += "};"
+
+        return $scriptVar
+    }
+
     Add-Type @"
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -206,24 +249,41 @@ namespace SandboxConfiguration
             var configFile = Path.Combine(scriptDir, "SandboxConfig.wsb");
 
             var sandboxCmd = $"{Path.Combine(scriptDir, $@"WSBshare\sandbox-config.ps1")}";
-            
+
+            var mappedFolders = new List<ConfigurationMappedFolder$identifier>
+            {
+                new ConfigurationMappedFolder$identifier
+                {
+                    HostFolder = Path.Combine(scriptDir, @"WSBshare"),
+                    SandboxFolder = Path.Combine(scriptDir, @"WSBshare"),
+                    ReadOnly = false
+                }
+            };
+
+            $(GenerateCSharpMappingVariable -varName "readOnlyMappings" -mappings $ReadOnlyMappings)
+
+            $(GenerateCSharpMappingVariable -varName "readWriteMappings" -mappings $ReadWriteMappings)
+
+            foreach (var mappingConfig in new List<(List<string> mappings, bool readOnly)>
+            {
+                (mappings: readOnlyMappings, readOnly: true),
+                (mappings: readWriteMappings, readOnly: false)
+            })
+            {
+                foreach (var mapping in mappingConfig.mappings)
+                {
+                    mappedFolders.Add(new ConfigurationMappedFolder$identifier
+                    {
+                        HostFolder = mapping,
+                        SandboxFolder = mapping,
+                        ReadOnly = mappingConfig.readOnly
+                    });
+                }
+            }
+
             var config = new Configuration$identifier
             {
-                MappedFolders = new ConfigurationMappedFolder$identifier[]
-                {
-                    new ConfigurationMappedFolder$identifier
-                    {
-                        HostFolder = Path.Combine(scriptDir, @"WSBshare"),
-                        SandboxFolder = Path.Combine(scriptDir, @"WSBshare"),
-                        ReadOnly = false
-                    },
-                    new ConfigurationMappedFolder$identifier
-                    {
-                        HostFolder = scriptDir,
-                        SandboxFolder = scriptDir,
-                        ReadOnly = true
-                    }
-                },
+                MappedFolders = mappedFolders.ToArray(),
                 ClipboardRedirection = "Default",
                 MemoryInMB = memory,
                 LogonCommand = new ConfigurationLogonCommand$identifier
@@ -283,6 +343,7 @@ namespace SandboxConfiguration
 
 # rob env test
 # Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
+Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\rob\Github\Windows-Sandbox') -ReadWriteMappings @('C:\Users\rob\Github')
 
 # luke env test
 # Start-WindowsSandbox
