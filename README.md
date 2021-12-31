@@ -33,42 +33,42 @@ The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB). If the 
 
 #### VGpu
 Enables or disables GPU sharing. Defaults to 'Default'. 
-*Enable*: Enables vGPU support in the sandbox.
-*Disable*: Disables vGPU support in the sandbox. If this value is set, the sandbox will use software rendering, which may be slower than virtualized GPU.
+*Enable*: Enables vGPU support in the sandbox.  
+*Disable*: Disables vGPU support in the sandbox. If this value is set, the sandbox will use software rendering, which may be slower than virtualized GPU.  
 *Default*: This is the default value for vGPU support. Currently this means vGPU is disabled.
 
 #### Networking
 Enables or disables networking in the sandbox. You can disable network access to decrease the attack surface exposed by the sandbox. Defaults to 'Default'.         
-*Disable*: Disables networking in the sandbox.
+*Disable*: Disables networking in the sandbox.  
 *Default*: This is the default value for networking support. This value enables networking by creating a virtual switch on the host and connects the sandbox to it via a virtual NIC.
 
 #### AudioInput
 Enables or disables audio input to the sandbox. Defaults to 'Default'.         
-*Enable*: Enables audio input in the sandbox. If this value is set, the sandbox will be able to receive audio input from the user. Applications that use a microphone may require this capability.
-*Disable*: Disables audio input in the sandbox. If this value is set, the sandbox can't receive audio input from the user. Applications that use a microphone may not function properly with this setting.
+*Enable*: Enables audio input in the sandbox. If this value is set, the sandbox will be able to receive audio input from the user. Applications that use a microphone may require this capability.  
+*Disable*: Disables audio input in the sandbox. If this value is set, the sandbox can't receive audio input from the user. Applications that use a microphone may not function properly with this setting.  
 *Default*: This is the default value for audio input support. Currently this means audio input is enabled.
 
 #### VideoInput
 Enables or disables video input to the sandbox. Defaults to 'Default'.                 
-*Enable*: Enables video input in the sandbox.
-*Disable*: Disables video input in the sandbox. Applications that use video input may not function properly in the sandbox.
+*Enable*: Enables video input in the sandbox.  
+*Disable*: Disables video input in the sandbox. Applications that use video input may not function properly in the sandbox.  
 *Default*: This is the default value for video input support. Currently this means video input is disabled. Applications that use video input may not function properly in the sandbox.
 
 #### ProtectedClient
 Enables or disables video input to the sandbox. Defaults to 'Default'.                         
-*Enable*: Runs Windows sandbox in Protected Client mode. If this value is set, the sandbox runs with extra security mitigations enabled.
-*Disable*: Runs the sandbox in standard mode without extra security mitigations.
+*Enable*: Runs Windows sandbox in Protected Client mode. If this value is set, the sandbox runs with extra security mitigations enabled.  
+*Disable*: Runs the sandbox in standard mode without extra security mitigations.  
 *Default*: This is the default value for Protected Client mode. Currently, this means the sandbox doesn't run in Protected Client mode.
 
 #### PrinterRedirection
 Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
-*Enable*: Enables sharing of host printers into the sandbox.
-*Disable*: Disables printer redirection in the sandbox. If this value is set, the sandbox can't view printers from the host.
+*Enable*: Enables sharing of host printers into the sandbox.  
+*Disable*: Disables printer redirection in the sandbox. If this value is set, the sandbox can't view printers from the host.  
 *Default*: This is the default value for printer redirection support. Currently this means printer redirection is disabled.
 
 #### ClipboardRedirection
-Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
-*Disable*: Disables clipboard redirection in the sandbox. If this value is set, copy/paste in and out of the sandbox will be restricted.
+Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.  
+*Disable*: Disables clipboard redirection in the sandbox. If this value is set, copy/paste in and out of the sandbox will be restricted.  
 *Default*: This is the default value for clipboard redirection. Currently copy/paste between the host and sandbox are permitted under Default.
 
 #### NoSetup
