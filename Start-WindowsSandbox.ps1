@@ -6,13 +6,56 @@
     Spawn a Windows sandbox instance
 
     .PARAMETER CopyPsProfile
-    If supplied your Powershell profile will be copied to the sandbox
+    If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomePsProfile parameter.
+
+    .PARAMETER CustomPsProfilePath
+    To be used in conjunction with the CopyPsProfile parameter. If supplied, this will be the path to a custom profile ps1 file to copy to the sandbox. The file must be named Microsoft.PowerShell_profile.ps1.
 
     .PARAMETER Memory
-    The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB).
+    The amount of memory to allocate to the sandbox. Defaults to 8192 (8GB). If the memory value specified is insufficient to boot a sandbox, it will be automatically increased to the required minimum amount.
+
+    .PARAMETER VGpu
+    Enables or disables GPU sharing. Defaults to 'Default'. 
+    Enable: Enables vGPU support in the sandbox.
+    Disable: Disables vGPU support in the sandbox. If this value is set, the sandbox will use software rendering, which may be slower than virtualized GPU.
+    Default This is the default value for vGPU support. Currently this means vGPU is disabled.
+    
+    .PARAMETER Networking
+    Enables or disables networking in the sandbox. You can disable network access to decrease the attack surface exposed by the sandbox. Defaults to 'Default'.         
+    Disable: Disables networking in the sandbox.
+    Default: This is the default value for networking support. This value enables networking by creating a virtual switch on the host and connects the sandbox to it via a virtual NIC.
+    
+    .PARAMETER AudioInput
+    Enables or disables audio input to the sandbox. Defaults to 'Default'.         
+    Enable: Enables audio input in the sandbox. If this value is set, the sandbox will be able to receive audio input from the user. Applications that use a microphone may require this capability.
+    Disable: Disables audio input in the sandbox. If this value is set, the sandbox can't receive audio input from the user. Applications that use a microphone may not function properly with this setting.
+    Default: This is the default value for audio input support. Currently this means audio input is enabled.
+    
+    .PARAMETER VideoInput
+    Enables or disables video input to the sandbox. Defaults to 'Default'.                 
+    Enable: Enables video input in the sandbox.
+    Disable: Disables video input in the sandbox. Applications that use video input may not function properly in the sandbox.
+    Default: This is the default value for video input support. Currently this means video input is disabled. Applications that use video input may not function properly in the sandbox.
+    
+    .PARAMETER ProtectedClient
+    Enables or disables video input to the sandbox. Defaults to 'Default'.                         
+    Enable: Runs Windows sandbox in Protected Client mode. If this value is set, the sandbox runs with extra security mitigations enabled.
+    Disable: Runs the sandbox in standard mode without extra security mitigations.
+    Default: This is the default value for Protected Client mode. Currently, this means the sandbox doesn't run in Protected Client mode.
+    
+    .PARAMETER PrinterRedirection
+    Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
+    Enable: Enables sharing of host printers into the sandbox.
+    Disable: Disables printer redirection in the sandbox. If this value is set, the sandbox can't view printers from the host.
+    Default: This is the default value for printer redirection support. Currently this means printer redirection is disabled.
+    
+    .PARAMETER ClipboardRedirection
+    Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
+    Disable: Disables clipboard redirection in the sandbox. If this value is set, copy/paste in and out of the sandbox will be restricted.
+    Default: This is the default value for clipboard redirection. Currently copy/paste between the host and sandbox are permitted under Default.
 
     .PARAMETER NoSetup
-    If supplied, the sandbox will not be configured.
+    If supplied, the sandbox will not be configured (will use default values, see: https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-sandbox/windows-sandbox-configure-using-wsb-file).
 
     .PARAMETER AllPredefinedPackages
     If supplied, chocolatey will be used to install all predefined packages.
@@ -65,21 +108,82 @@
     Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -LaunchScript "C:\Users\Arthur\MakeTea.ps1"
 
     .EXAMPLE 
-    Create a sandbox, install windows terminal, VS code, firefox, 7zip and git, and set read only and read/write directory mappings.
-    Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ReadOnlyMappings @('C:\Users\Zaphod\HeartOfGold') -ReadWriteMappings @('C:\Users\Ford\Betelgeuse')
+    Create a sandbox, set read only and read/write directory mappings and a custom profile script to be copied.
+    Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\Zaphod\HeartOfGold') -ReadWriteMappings @('C:\Users\Ford\Betelgeuse') -CopyPsProfile -CustomPsProfilePath "C:\Trillian\Microsoft.PowerShell_profile.ps1"
 
 #>
 Function Start-WindowsSandbox {
     [cmdletbinding(DefaultParameterSetName = "config")]
     [alias("wsb")]
     Param(
-        [Parameter(Mandatory = $false, HelpMessage = "Copy your Powershell profile to the sandbox")]
+        [Parameter(Mandatory = $false, HelpMessage = 'If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomePsProfile parameter.')]
         [switch]$CopyPsProfile,
+
+        [Parameter(Mandatory = $false, HelpMessage = "To be used in conjunction with the CopyPsProfile parameter. If supplied, this will be the path to a custom profile ps1 file to copy to the sandbox. The file must be named Microsoft.PowerShell_profile.ps1.")]
+        [ValidateScript({
+            if (Test-Path $_) {
+                if ($_ -like ("*Microsoft.PowerShell_profile.ps1")) {
+                    $true
+                } else {
+                    throw "The supplied custom profile path does not appear to be a valid PowerShell profile."
+                }
+            } else {
+                throw "The supplied custom profile path does not exist."
+            }
+        })]
+        [switch]$CustomPsProfilePath,
         
-        [Parameter(HelpMessage = "Amount of memory (in MB) to allocate to the sandbox. Defaults to 8192 (8GB)")]
+        [Parameter(HelpMessage = "Amount of memory (in MB) to allocate to the sandbox. Defaults to 8192 (8GB). If the memory value specified is insufficient to boot a sandbox, it will be automatically increased to the required minimum amount.")]
         [ushort]$Memory = 8192,
         
-        [Parameter(HelpMessage = "Launch a sandbox without any configuration")]
+        [Parameter(HelpMessage = "Enables or disables GPU sharing. Defaults to 'Default'. 
+        Enable: Enables vGPU support in the sandbox.
+        Disable: Disables vGPU support in the sandbox. If this value is set, the sandbox will use software rendering, which may be slower than virtualized GPU.
+        Default This is the default value for vGPU support. Currently this means vGPU is disabled.")]
+        [ValidateSet("Enable", "Disable", "Default")]
+        [string]$VGpu = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables networking in the sandbox. You can disable network access to decrease the attack surface exposed by the sandbox. Defaults to 'Default'.         
+        Disable: Disables networking in the sandbox.
+        Default: This is the default value for networking support. This value enables networking by creating a virtual switch on the host and connects the sandbox to it via a virtual NIC.")]
+        [ValidateSet("Disable", "Default")]
+        [string]$Networking = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables audio input to the sandbox. Defaults to 'Default'.         
+        Enable: Enables audio input in the sandbox. If this value is set, the sandbox will be able to receive audio input from the user. Applications that use a microphone may require this capability.
+        Disable: Disables audio input in the sandbox. If this value is set, the sandbox can't receive audio input from the user. Applications that use a microphone may not function properly with this setting.
+        Default: This is the default value for audio input support. Currently this means audio input is enabled.")]
+        [ValidateSet("Enable", "Disable", "Default")]
+        [string]$AudioInput = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables video input to the sandbox. Defaults to 'Default'.                 
+        Enable: Enables video input in the sandbox.
+        Disable: Disables video input in the sandbox. Applications that use video input may not function properly in the sandbox.
+        Default: This is the default value for video input support. Currently this means video input is disabled. Applications that use video input may not function properly in the sandbox.")]
+        [ValidateSet("Enable", "Disable", "Default")]
+        [string]$VideoInput = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables video input to the sandbox. Defaults to 'Default'.                         
+        Enable: Runs Windows sandbox in Protected Client mode. If this value is set, the sandbox runs with extra security mitigations enabled.
+        Disable: Runs the sandbox in standard mode without extra security mitigations.
+        Default: This is the default value for Protected Client mode. Currently, this means the sandbox doesn't run in Protected Client mode.")]
+        [ValidateSet("Enable", "Disable", "Default")]
+        [string]$ProtectedClient = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
+        Enable: Enables sharing of host printers into the sandbox.
+        Disable: Disables printer redirection in the sandbox. If this value is set, the sandbox can't view printers from the host.
+        Default: This is the default value for printer redirection support. Currently this means printer redirection is disabled.")]
+        [ValidateSet("Enable", "Disable", "Default")]
+        [string]$PrinterRedirection = "Default",
+        
+        [Parameter(HelpMessage = "Enables or disables printer sharing from the host into the sandbox. Defaults to 'Default'.        
+        Disable: Disables clipboard redirection in the sandbox. If this value is set, copy/paste in and out of the sandbox will be restricted.
+        Default: This is the default value for clipboard redirection. Currently copy/paste between the host and sandbox are permitted under Default.")]
+        [ValidateSet("Disable", "Default")]
+        [string]$ClipboardRedirection = "Default",
+        
+        [Parameter(HelpMessage = "Launch a sandbox without any configuration (will use default values, see: https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-sandbox/windows-sandbox-configure-using-wsb-file)")]
         [switch]$NoSetup,
 
         [Parameter(Mandatory = $false, HelpMessage = "Install chocolatey and all predefined packages (i.e. no other package switches required)")]
@@ -130,10 +234,19 @@ Function Start-WindowsSandbox {
 
     $wsbShare = $(Join-Path $PSScriptRoot "WSBShare")
 
+    # copy PS profile
     if ($CopyPsProfile.IsPresent) {
-        Copy-Item -Path $PROFILE -Destination $wsbShare -Force
+        if (![string]::IsNullOrWhiteSpace($CustomPsProfilePath)) {
+            Copy-Item -Path $CustomPsProfilePath -Destination $wsbShare -Force
+        } else {
+            if ([string]::IsNullOrWhiteSpace($PROFILE) -or !(Test-Path $PROFILE)) {
+                throw "CopyPsProfile was supplied but no profile was found. Please set the $PROFILE environment variable to the path of your PowerShell profile."
+            }
+    
+            Copy-Item -Path $PROFILE -Destination $wsbShare -Force
+        }
     }
-
+    
     # if no configuration file is specified, spawn a default sandbox
     if ($NoSetup) {
         Write-Verbose "Launching default WindowsSandbox.exe"
@@ -186,7 +299,7 @@ Function Start-WindowsSandbox {
 
     $settings.WriteAsJson($(Join-Path $wsbShare "sandboxSettings.json"))
 
-    # uncomment to test desrialising the settings.json file back the to the SandboxSettings class
+    # uncomment to test deserialising the settings.json file back the to the SandboxSettings class
     # $settings = [SandboxSettings]::new((Get-Content -Raw $(Join-Path $wsbShare "sandboxSettings.json") | Out-String | ConvertFrom-Json))
 
     Write-Verbose "Launching WindowsSandbox using configuration file SandboxConfig.wsb"
@@ -244,7 +357,7 @@ namespace SandboxConfiguration
 {
     public class Builder$identifier
     {
-        public static void Build(string scriptDir, ushort memory)
+        public static void Build(string scriptDir)
         {
             var configFile = Path.Combine(scriptDir, "SandboxConfig.wsb");
 
@@ -284,8 +397,14 @@ namespace SandboxConfiguration
             var config = new Configuration$identifier
             {
                 MappedFolders = mappedFolders.ToArray(),
-                ClipboardRedirection = "Default",
-                MemoryInMB = memory,
+                MemoryInMB = $Memory,
+                Vgpu = "$VGpu",
+                Networking = "$Networking",
+                AudioInput = "$AudioInput",
+                VideoInput = "$VideoInput",
+                ProtectedClient = "$ProtectedClient",
+                PrinterRedirection = "$PrinterRedirection",
+                ClipboardRedirection = "$ClipboardRedirection",
                 LogonCommand = new ConfigurationLogonCommand$identifier
                 {
                     Command = $"powershell -executionpolicy unrestricted -command \"start powershell {{-noexit -file {sandboxCmd}}}\""
@@ -312,8 +431,14 @@ namespace SandboxConfiguration
         [System.Xml.Serialization.XmlArrayItemAttribute("MappedFolder", IsNullable = false)]
         public ConfigurationMappedFolder$identifier[] MappedFolders { get; set; }
 
-        public string ClipboardRedirection { get; set; }
         public ushort MemoryInMB { get; set; }
+        public string Vgpu { get; set; }
+        public string Networking { get; set; }
+        public string AudioInput { get; set; }
+        public string VideoInput { get; set; }
+        public string ProtectedClient { get; set; }
+        public string PrinterRedirection { get; set; }
+        public string ClipboardRedirection { get; set; }
 
         public ConfigurationLogonCommand$identifier LogonCommand { get; set; }
     }
@@ -338,12 +463,13 @@ namespace SandboxConfiguration
 }
 "@
 
-    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$PSScriptRoot', $Memory)"
+    Invoke-Expression "[SandboxConfiguration.Builder$identifier]::Build('$PSScriptRoot')"
 }
 
 # rob env test
 # Start-WindowsSandbox -WindowsTerminal -VsCode -Firefox -SevenZip -Git -ChocoPackages @([pscustomobject]@{ command = 'nodejs.install'; params = ''; }) -LaunchScript "C:\Users\rob\OneDrive\Desktop\test.ps1"
-# Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\rob\Github\Windows-Sandbox') -ReadWriteMappings @('C:\Users\rob\Github')
+# Start-WindowsSandbox -ReadOnlyMappings @('C:\Users\rob\Github\Windows-Sandbox') -ReadWriteMappings @('C:\Users\rob\Github') 
+#-CopyPsProfile -CustomPsProfilePath "C:\Users\rob\OneDrive\Desktop\test.ps1"
 
 # luke env test
 # Start-WindowsSandbox
