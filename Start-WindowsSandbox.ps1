@@ -6,7 +6,7 @@
     Spawn a Windows sandbox instance
 
     .PARAMETER CopyPsProfile
-    If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomePsProfile parameter.
+    If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomPsProfilePath parameter.
 
     .PARAMETER CustomPsProfilePath
     To be used in conjunction with the CopyPsProfile parameter. If supplied, this will be the path to a custom profile ps1 file to copy to the sandbox. The file must be named Microsoft.PowerShell_profile.ps1.
@@ -116,7 +116,7 @@ Function Start-WindowsSandbox {
     [cmdletbinding(DefaultParameterSetName = "config")]
     [alias("wsb")]
     Param(
-        [Parameter(Mandatory = $false, HelpMessage = 'If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomePsProfile parameter.')]
+        [Parameter(Mandatory = $false, HelpMessage = 'If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the CustomPsProfilePath parameter.')]
         [switch]$CopyPsProfile,
 
         [Parameter(Mandatory = $false, HelpMessage = "To be used in conjunction with the CopyPsProfile parameter. If supplied, this will be the path to a custom profile ps1 file to copy to the sandbox. The file must be named Microsoft.PowerShell_profile.ps1.")]
