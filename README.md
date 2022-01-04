@@ -23,7 +23,7 @@ This project provides a way to create a Windows Sandbox environment using the co
 ## Parameters
 
 #### CopyPsProfile
-*Optional*. If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environemnt variable in your current session, unless overriden using the **CustomPsProfilePath** parameter.
+*Optional*. If supplied your Powershell profile will be copied to the sandbox. Your profile is assumed to be the $PROFILE environment variable in your current session, unless overriden using the **CustomPsProfilePath** parameter.
 
 #### CustomPsProfilePath
 *Optional*. To be used in conjunction with the **CopyPsProfile** parameter. If supplied, this will be the path to a custom profile ps1 file to copy to the sandbox. The file must be named **Microsoft.PowerShell_profile.ps1**.
