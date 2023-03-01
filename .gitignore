@@ -1,3 +1,4 @@
 /SandboxConfig.wsb
 /WSBshare/sandboxSettings.json
 /WSBshare/Microsoft.PowerShell_profile.ps1
+.vscode/*

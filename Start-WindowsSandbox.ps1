@@ -131,7 +131,7 @@ Function Start-WindowsSandbox {
                 throw "The supplied custom profile path does not exist."
             }
         })]
-        [switch]$CustomPsProfilePath,
+        [string]$CustomPsProfilePath,
         
         [Parameter(HelpMessage = "Amount of memory (in MB) to allocate to the sandbox. Defaults to 8192 (8GB). If the memory value specified is insufficient to boot a sandbox, it will be automatically increased to the required minimum amount.")]
         [ushort]$Memory = 8192,
